@@ -3,161 +3,298 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Numeric Baseball Game</title>
+    <title>숫자 야구 게임</title>
     <style>
+        :root {
+            --primary-color: #4CAF50;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333;
+        }
+
+        /* 모든 요소에 box-sizing 적용 */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f4f9;
-            color: #333;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .game-container {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            width: 100%;
             max-width: 400px;
-            margin: 40px auto;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
         }
-        h2 { text-align: center; color: #2c3e50; }
-        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
-        input[type="number"] {
-            flex: 1;
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+
+        h1 {
+            margin-top: 0;
+            color: var(--primary-color);
+            font-size: 24px;
         }
+
+        .description {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            width: 100%; /* 부모 컨테이너 너비 확보 */
+        }
+
+        input[type="text"] {
+            flex: 1 1 auto; /* 너비가 0으로 수축하는 현상 방지 */
+            width: 100%; /* 기본 너비 확보 */
+            min-width: 0;
+            background-color: #ffffff; /* 환경에 따른 투명화 방지 */
+            color: #333333;
+            padding: 12px;
+            font-size: 18px;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            letter-spacing: 5px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary-color);
+        }
+
         button {
-            padding: 10px 20px;
+            flex-shrink: 0; /* 버튼 크기가 줄어들지 않도록 설정 */
+            padding: 12px 20px;
             font-size: 16px;
-            background-color: #3498db;
+            font-weight: bold;
             color: white;
+            background-color: var(--primary-color);
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
+            transition: background-color 0.3s;
         }
-        button:hover { background-color: #2980b9; }
-        .log-area {
-            background: #222;
-            color: #4ade80;
-            padding: 15px;
-            border-radius: 4px;
-            height: 200px;
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        #result-board {
+            text-align: left;
+            margin-top: 20px;
+            max-height: 250px;
             overflow-y: auto;
-            font-family: monospace;
-            white-space: pre-wrap;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
         }
-        .error { color: #ff6b6b; }
-        .status { margin-bottom: 10px; font-weight: bold; }
+
+        .log-item {
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+            display: flex;
+            justify-content: space-between;
+            font-size: 15px;
+        }
+
+        .log-item:last-child {
+            border-bottom: none;
+        }
+
+        .badge {
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .strike { color: #d32f2f; }
+        .ball { color: #1976d2; }
+        .out { color: #757575; }
+        
+        #restart-btn {
+            display: none;
+            width: 100%;
+            margin-top: 15px;
+            background-color: #2196F3;
+        }
+
+        #restart-btn:hover {
+            background-color: #1976d2;
+        }
     </style>
 </head>
 <body>
 
-    <h2>Numeric Baseball Game</h2>
-    <div class="status" id="statusMsg">• Welcome to Numeric Baseball Game!<br>• Pitch three-digit numbers (000~999)</div>
-    
-    <div class="input-group">
-        <input type="number" id="guessInput" placeholder="ex) 123" min="0" max="999">
-        <button onclick="pitchBall()" id="pitchBtn">Pitch!</button>
+<div class="game-container">
+    <h1>⚾ 숫자 야구 게임</h1>
+    <div class="description">
+        1부터 9까지의 서로 다른 숫자 3개를 맞춰보세요.<br>
+        (기회는 총 10번 주어집니다)
     </div>
 
-    <div class="log-area" id="logArea"></div>
+    <form id="game-form">
+        <div class="input-group">
+            <input type="text" id="user-input" maxlength="3" pattern="\d{3}" placeholder="예: 123" required autocomplete="off">
+            <button type="submit" id="submit-btn">입력</button>
+        </div>
+    </form>
 
-    <script>
-        // 10*(10-1)*(10-2)=720 개의 경우의 수 중 하나 생성 
-        let answer = [];
-        while(answer.length < 3) {
-            let r = Math.floor(Math.random() * 10);
-            if(answer.indexOf(r) === -1) answer.push(r);
+    <button id="restart-btn">다시 시작하기</button>
+
+    <div id="result-board"></div>
+</div>
+
+<script>
+    let answer = [];
+    let attempts = 0;
+    const MAX_ATTEMPTS = 10;
+
+    const form = document.getElementById('game-form');
+    const input = document.getElementById('user-input');
+    const submitBtn = document.getElementById('submit-btn');
+    const restartBtn = document.getElementById('restart-btn');
+    const resultBoard = document.getElementById('result-board');
+
+    // 정답 생성 함수 (1~9 서로 다른 3자리 숫자)
+    function generateAnswer() {
+        const candidates = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        const result = [];
+        for (let i = 0; i < 3; i++) {
+            const randomIndex = Math.floor(Math.random() * candidates.length);
+            result.push(candidates.splice(randomIndex, 1)[0]);
         }
-        const f_nr = answer[0];
-        const s_nr = answer[1];
-        const t_nr = answer[2];
-        const answerStr = `${f_nr}${s_nr}${t_nr}`;
+        return result;
+    }
 
-        let pitch = 0;
-        let out = 0;
-        let gameOver = false;
+    // 게임 초기화
+    function initGame() {
+        answer = generateAnswer();
+        attempts = 0;
+        resultBoard.innerHTML = '';
+        input.value = '';
+        input.disabled = false;
+        submitBtn.disabled = false;
+        restartBtn.style.display = 'none';
+        input.focus();
+        console.log("정답 (테스트용):", answer.join('')); // 개발자 도구에서 정답 확인 가능
+    }
 
-        function pitchBall() {
-            if (gameOver) return;
+    // 결과 화면에 추가
+    function appendLog(guess, message) {
+        const div = document.createElement('div');
+        div.className = 'log-item';
+        div.innerHTML = `<span><span class="badge" style="background:#eee;">${attempts}회차</span> <strong>${guess}</strong></span> <span>${message}</span>`;
+        resultBoard.prepend(div); // 최신 기록이 위로 올라오게
+    }
 
-            const inputVal = document.getElementById('guessInput').value.padStart(3, '0');
-            const logArea = document.getElementById('logArea');
-            const statusMsg = document.getElementById('statusMsg');
+    // 게임 종료 처리
+    function endGame(isWin) {
+        input.disabled = true;
+        submitBtn.disabled = true;
+        restartBtn.style.display = 'block';
 
-            // 입력값 검증 (000~999 길이 3) [cite: 3, 4]
-            if (inputVal.length !== 3 || isNaN(inputVal)) {
-                statusMsg.innerHTML = `<span class="error">• It should be in 000~999 to hit ${answerStr} and exit 😥️</span>`;
-                gameOver = true;
-                document.getElementById('pitchBtn').disabled = true;
-                return;
-            }
+        const div = document.createElement('div');
+        div.className = 'log-item';
+        div.style.justifyContent = 'center';
+        div.style.fontSize = '18px';
+        div.style.fontWeight = 'bold';
+        div.style.color = isWin ? '#4CAF50' : '#d32f2f';
+        div.style.marginTop = '10px';
+        
+        if (isWin) {
+            div.innerText = `🎉 축하합니다! 정답입니다!`;
+        } else {
+            div.innerText = `💀 실패! 정답은 ${answer.join('')} 였습니다.`;
+        }
+        resultBoard.prepend(div);
+    }
 
-            pitch++; // 시도 횟수 증가 [cite: 3]
-            
-            const f_in = parseInt(inputVal[0]);
-            const s_in = parseInt(inputVal[1]);
-            const t_in = parseInt(inputVal[2]);
+    // 폼 제출 이벤트
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const guess = input.value;
 
-            let strike = 0;
-            let ball = 0;
+        // 입력값 검증
+        if (guess.length !== 3) {
+            alert("3자리 숫자를 입력해주세요.");
+            return;
+        }
+        if (new Set(guess).size !== 3) {
+            alert("중복되지 않는 숫자를 입력해주세요.");
+            input.value = '';
+            return;
+        }
+        if (guess.includes('0')) {
+            alert("1부터 9까지의 숫자만 사용해주세요.");
+            input.value = '';
+            return;
+        }
 
-            // 스트라이크 및 볼 판정 로직 [cite: 4, 5]
-            if (f_in === f_nr) strike++;
-            if (f_in === s_nr) ball++;
-            if (f_in === t_nr) ball++;
-            
-            if (s_in === f_nr) ball++;
-            if (s_in === s_nr) strike++;
-            if (s_in === t_nr) ball++;
-            
-            if (t_in === f_nr) ball++;
-            if (t_in === s_nr) ball++;
-            if (t_in === t_nr) strike++;
+        attempts++;
+        let strike = 0;
+        let ball = 0;
 
-            // 스트라이크와 볼이 0이면 아웃 카운트 증가 [cite: 5]
-            if ((strike + ball) === 0) {
-                out++;
-            }
-
-            // 로그 기록 [cite: 5]
-            const logLine = `#${pitch.toString().padStart(2, ' ')} ${inputVal} S:${strike} B:${ball} O:${out}\n`;
-            logArea.innerHTML += logLine;
-            logArea.scrollTop = logArea.scrollHeight;
-
-            // 종료 조건 확인 로직 (3 스트라이크 또는 3 아웃) 
-            if (out >= 3) {
-                // 패배 시 메시지 [cite: 6]
-                statusMsg.innerHTML = `<span class="error">• Three out and you lost ${answerStr}! 😥️</span>`;
-                endGame();
-            } else if (strike >= 3) {
-                // 승리 시 투구 수에 따른 메시지 
-                let msg = `• You beat me at ${pitch} pitches! `;
-                if (pitch <= 5) {
-                    msg += "Wonderful 😀️";
-                } else if (pitch <= 9) {
-                    msg += "Very good 🙂️";
+        // 스트라이크와 볼 판정
+        for (let i = 0; i < 3; i++) {
+            const index = answer.indexOf(Number(guess[i]));
+            if (index > -1) {
+                if (index === i) {
+                    strike++;
                 } else {
-                    msg += "😐️";
+                    ball++;
                 }
-                statusMsg.innerHTML = `<span style="color: #3498db;">${msg}</span>`;
-                endGame();
             }
-
-            document.getElementById('guessInput').value = '';
-            document.getElementById('guessInput').focus();
         }
 
-        function endGame() {
-            gameOver = true;
-            document.getElementById('pitchBtn').disabled = true;
-            document.getElementById('guessInput').disabled = true;
+        // 결과 문자열 생성
+        let message = '';
+        if (strike === 0 && ball === 0) {
+            message = `<span class="badge out">OUT</span>`;
+        } else {
+            if (strike > 0) message += `<span class="badge strike">${strike}S</span> `;
+            if (ball > 0) message += `<span class="badge ball">${ball}B</span>`;
         }
 
-        // Enter 키로도 입력할 수 있도록 이벤트 추가
-        document.getElementById('guessInput').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                pitchBall();
-            }
-        });
-    </script>
+        appendLog(guess, message);
+
+        // 승리 또는 패배 체크
+        if (strike === 3) {
+            endGame(true);
+        } else if (attempts >= MAX_ATTEMPTS) {
+            endGame(false);
+        }
+
+        input.value = '';
+        input.focus();
+    });
+
+    // 재시작 버튼 이벤트
+    restartBtn.addEventListener('click', initGame);
+
+    // 첫 실행
+    initGame();
+</script>
+
 </body>
 </html>
