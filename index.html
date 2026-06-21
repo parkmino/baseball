@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Numeric Baseball Game</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            max-width: 400px;
+            margin: 40px auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h2 { text-align: center; color: #2c3e50; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        input[type="number"] {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover { background-color: #2980b9; }
+        .log-area {
+            background: #222;
+            color: #4ade80;
+            padding: 15px;
+            border-radius: 4px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .error { color: #ff6b6b; }
+        .status { margin-bottom: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h2>Numeric Baseball Game</h2>
+    <div class="status" id="statusMsg">• Welcome to Numeric Baseball Game!<br>• Pitch three-digit numbers (000~999)</div>
+    
+    <div class="input-group">
+        <input type="number" id="guessInput" placeholder="ex) 123" min="0" max="999">
+        <button onclick="pitchBall()" id="pitchBtn">Pitch!</button>
+    </div>
+
+    <div class="log-area" id="logArea"></div>
+
+    <script>
+        // 10*(10-1)*(10-2)=720 개의 경우의 수 중 하나 생성 
+        let answer = [];
+        while(answer.length < 3) {
+            let r = Math.floor(Math.random() * 10);
+            if(answer.indexOf(r) === -1) answer.push(r);
+        }
+        const f_nr = answer[0];
+        const s_nr = answer[1];
+        const t_nr = answer[2];
+        const answerStr = `${f_nr}${s_nr}${t_nr}`;
+
+        let pitch = 0;
+        let out = 0;
+        let gameOver = false;
+
+        function pitchBall() {
+            if (gameOver) return;
+
+            const inputVal = document.getElementById('guessInput').value.padStart(3, '0');
+            const logArea = document.getElementById('logArea');
+            const statusMsg = document.getElementById('statusMsg');
+
+            // 입력값 검증 (000~999 길이 3) [cite: 3, 4]
+            if (inputVal.length !== 3 || isNaN(inputVal)) {
+                statusMsg.innerHTML = `<span class="error">• It should be in 000~999 to hit ${answerStr} and exit 😥️</span>`;
+                gameOver = true;
+                document.getElementById('pitchBtn').disabled = true;
+                return;
+            }
+
+            pitch++; // 시도 횟수 증가 [cite: 3]
+            
+            const f_in = parseInt(inputVal[0]);
+            const s_in = parseInt(inputVal[1]);
+            const t_in = parseInt(inputVal[2]);
+
+            let strike = 0;
+            let ball = 0;
+
+            // 스트라이크 및 볼 판정 로직 [cite: 4, 5]
+            if (f_in === f_nr) strike++;
+            if (f_in === s_nr) ball++;
+            if (f_in === t_nr) ball++;
+            
+            if (s_in === f_nr) ball++;
+            if (s_in === s_nr) strike++;
+            if (s_in === t_nr) ball++;
+            
+            if (t_in === f_nr) ball++;
+            if (t_in === s_nr) ball++;
+            if (t_in === t_nr) strike++;
+
+            // 스트라이크와 볼이 0이면 아웃 카운트 증가 [cite: 5]
+            if ((strike + ball) === 0) {
+                out++;
+            }
+
+            // 로그 기록 [cite: 5]
+            const logLine = `#${pitch.toString().padStart(2, ' ')} ${inputVal} S:${strike} B:${ball} O:${out}\n`;
+            logArea.innerHTML += logLine;
+            logArea.scrollTop = logArea.scrollHeight;
+
+            // 종료 조건 확인 로직 (3 스트라이크 또는 3 아웃) 
+            if (out >= 3) {
+                // 패배 시 메시지 [cite: 6]
+                statusMsg.innerHTML = `<span class="error">• Three out and you lost ${answerStr}! 😥️</span>`;
+                endGame();
+            } else if (strike >= 3) {
+                // 승리 시 투구 수에 따른 메시지 
+                let msg = `• You beat me at ${pitch} pitches! `;
+                if (pitch <= 5) {
+                    msg += "Wonderful 😀️";
+                } else if (pitch <= 9) {
+                    msg += "Very good 🙂️";
+                } else {
+                    msg += "😐️";
+                }
+                statusMsg.innerHTML = `<span style="color: #3498db;">${msg}</span>`;
+                endGame();
+            }
+
+            document.getElementById('guessInput').value = '';
+            document.getElementById('guessInput').focus();
+        }
+
+        function endGame() {
+            gameOver = true;
+            document.getElementById('pitchBtn').disabled = true;
+            document.getElementById('guessInput').disabled = true;
+        }
+
+        // Enter 키로도 입력할 수 있도록 이벤트 추가
+        document.getElementById('guessInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                pitchBall();
+            }
+        });
+    </script>
+</body>
+</html>
